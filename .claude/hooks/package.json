@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-starter-hooks",
+  "version": "1.0.0",
+  "description": "claude-code-starter — Hook scripts for session tracking, logging, and observability.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "_comments": {
+    "note": "Hooks are zero-dependency by default — they use only Node.js built-in modules.",
+    "redis_option": "For Redis-backed real-time hooks (optional), add: \"ioredis\": \"^5.4.0\"",
+    "default_hooks": [
+      "session-inject.mjs      — UserPromptSubmit: Extract session IDs, log prompts",
+      "log-unified.mjs         — PostToolUse: Log every tool call to actions.jsonl",
+      "skill-activated.mjs     — PreToolUse: Track which skills have been activated",
+      "session-end.mjs         — Stop: Write session summary (duration, tool count, skills)",
+      "pre-compact.mjs         — Notification: Snapshot state before auto-compact",
+      "subagent-lifecycle.mjs  — SubagentCompleted: Audit trail of subagent activity"
+    ]
+  }
+}

@@ -1,7 +1,9 @@
 node_modules/
 dist/
-.env
-.env.local
-.claude/logs/
 temp/
+.env
+*.db
+*.tsbuildinfo
+logs/
 *.log
+.DS_Store

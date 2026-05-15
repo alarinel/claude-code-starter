@@ -4,664 +4,212 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Compatible-blueviolet.svg)](https://docs.anthropic.com/en/docs/claude-code)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-A minimal, opinionated starter kit for structured Claude Code usage. Drop this into any project and immediately get better results from Claude Code — less token waste, repeatable workflows, and a foundation you can extend.
+The Claude Code system we use internally at LLITD LLC. Open-source, take what's useful.
 
-**This is not a wrapper or framework.** It's a set of configuration files that teach Claude Code how to work with your codebase effectively.
+This is not a wrapper or framework — it's a complete set of configuration files, hooks, skills, agent orchestration patterns, and an optional MCP server reference implementation. Drop the pieces you want into your project and Claude Code becomes a reliable teammate instead of a smart stranger you re-onboard every conversation.
+
+> **No support promised.** We use this internally and publish it as-is. Issues and PRs are welcome and we'll get to them when we get to them. No SLA.
 
 ---
 
 ## Table of Contents
 
-- [Why This Exists](#why-this-exists)
 - [What's Included](#whats-included)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [CLAUDE.md Template](#claudemd-template)
-- [Skills](#skills)
-  - [Developer Skill](#developer-skill)
-  - [Deploy Skill](#deploy-skill)
-  - [Creating Your Own Skills](#creating-your-own-skills)
-- [Hooks](#hooks)
-  - [Session Tracking Hook](#session-tracking-hook)
-  - [Creating Your Own Hooks](#creating-your-own-hooks)
-- [Configuration](#configuration)
-- [Usage Patterns](#usage-patterns)
-  - [Starting a Session](#starting-a-session)
-  - [Making Code Changes](#making-code-changes)
-  - [Deploying](#deploying)
-  - [Multi-File Refactors](#multi-file-refactors)
-- [Tips and Best Practices](#tips-and-best-practices)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Customization](#customization)
 - [Want More?](#want-more)
 - [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## Why This Exists
-
-Out of the box, Claude Code is powerful but unstructured. Without guidance, it:
-
-- Reads your entire codebase context on every prompt (expensive)
-- Doesn't know your project's conventions, build commands, or deployment process
-- Can't maintain consistency across conversations
-- Has no memory of what it did in previous sessions
-
-A well-structured `CLAUDE.md` and a handful of skills fix all of this. Claude Code becomes a reliable teammate instead of a smart stranger you have to re-onboard every conversation.
-
-This starter kit gives you:
-
-1. **A CLAUDE.md template** that actually reduces token usage instead of inflating it
-2. **Two production-tested skills** that handle the most common workflows (code changes and deployment)
-3. **A session tracking hook** so you can see what Claude did across conversations
-4. **Patterns you can copy** to build your own skills and hooks
-
----
-
 ## What's Included
-
-```
-.claude/
-├── CLAUDE.md                    # Project instructions (the main file)
-├── settings.json                # Claude Code configuration
-├── skills/
-│   ├── developer/
-│   │   └── SKILL.md             # Code change workflow
-│   └── deploy/
-│       └── SKILL.md             # Deployment workflow
-└── hooks/
-    └── session-tracking.mjs     # Session start/end logging
-```
-
-That's it. No dependencies. No build step. No runtime. Just files that Claude Code reads.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
-- A project you want to use Claude Code with
-
-### Installation
-
-**Option A: Clone into an existing project**
-
-```bash
-# From your project root
-git clone https://github.com/lincolncole/claude-code-starter .claude-starter-tmp
-cp -r .claude-starter-tmp/.claude .
-cp .claude-starter-tmp/CLAUDE.md .
-rm -rf .claude-starter-tmp
-```
-
-**Option B: Start a new project with it**
-
-```bash
-git clone https://github.com/lincolncole/claude-code-starter my-project
-cd my-project
-rm -rf .git
-git init
-```
-
-**Option C: Just grab the files manually**
-
-Download the `.claude/` directory and `CLAUDE.md` from this repo and drop them into your project root.
 
 ### Configuration
 
-After copying the files, you need to customize them for your project:
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Project instructions template with customization placeholders |
+| `.claude/settings.json` | Hook registrations, permissions, environment variables |
+| `.claude/rules/general.md` | Universal coding standards |
+| `.claude/rules/backend.md` | Server-side coding standards (language-agnostic) |
+| `.claude/rules/frontend.md` | Client-side coding standards (framework-agnostic) |
+| `.claude/rules/mcp-server.md` | MCP server TypeScript standards |
+| `.env.example` | All configurable environment variables with defaults |
+| `check-prerequisites.sh` | Environment validation script (Linux/macOS, Git Bash, WSL) |
+| `check-prerequisites.ps1` | Environment validation script (Windows PowerShell) |
 
-1. **Edit `CLAUDE.md`** — Replace the placeholder sections with your project's actual details:
+### Skills
 
-```bash
-# Open in your editor
-code CLAUDE.md
-```
-
-Update these sections:
-- Project name and description
-- Tech stack
-- Build commands
-- Test commands
-- Directory structure overview
-- Coding conventions
-
-2. **Edit skill files** — Update `.claude/skills/developer/SKILL.md` and `.claude/skills/deploy/SKILL.md` with your actual build, test, and deploy commands.
-
-3. **Verify it works:**
-
-```bash
-claude
-# Then type: "What do you know about this project?"
-# Claude should reference your CLAUDE.md content
-```
-
----
-
-## Project Structure
-
-Here's what each file does and why it exists:
-
-### `.claude/CLAUDE.md` → The Brain
-
-This is the primary file Claude Code reads at the start of every conversation. It should contain:
-
-- What the project is
-- How to build and test it
-- Directory layout
-- Coding conventions
-- What NOT to do (common mistakes)
-
-**Key principle: Keep it focused.** Every token in CLAUDE.md is loaded every single conversation. If your CLAUDE.md is 10,000 tokens, that's 10,000 tokens burned before Claude reads your first message. Aim for under 3,000 tokens. Move detailed instructions into skills.
-
-### `.claude/skills/` → On-Demand Knowledge
-
-Skills are markdown files that Claude loads only when relevant. Instead of cramming deployment instructions into CLAUDE.md (loaded every time), put them in a deploy skill (loaded only when deploying).
-
-### `.claude/hooks/` → Automated Actions
-
-Hooks run automatically at specific lifecycle points — when a conversation starts, when Claude is about to execute a command, after a task completes, etc. They're scripts (Node.js, Python, Bash) that Claude Code executes.
-
-### `.claude/settings.json` → Configuration
-
-Controls permissions, allowed commands, and hook registration.
-
----
-
-## CLAUDE.md Template
-
-The included `CLAUDE.md` is structured in sections. Here's the architecture and the reasoning behind each section:
-
-```markdown
-# Project Name
-
-## Overview
-One paragraph. What this project is, what it does, who it's for.
-
-## Tech Stack
-Bullet list. Language, framework, database, deployment target.
-Claude uses this to choose appropriate patterns and libraries.
-
-## Build & Test
-Exact commands. No ambiguity.
-- `npm run build` — Compiles TypeScript
-- `npm test` — Runs Jest test suite
-- `npm run lint` — ESLint check
-
-## Directory Structure
-Top-level directories only. Brief description of each.
-src/
-├── api/        # REST endpoints
-├── services/   # Business logic
-├── models/     # Database models
-└── utils/      # Shared utilities
-
-## Coding Conventions
-The rules Claude MUST follow when writing code.
-- Use TypeScript strict mode
-- Prefer named exports
-- Error handling: always use Result types, never throw
-- Tests: colocate with source files as *.test.ts
-
-## Do NOT
-Explicit list of mistakes to avoid. Claude pays attention to these.
-- Do NOT use `any` type
-- Do NOT import from barrel files (index.ts)
-- Do NOT add new dependencies without asking
-
-## Skills
-Available skills and when to use them.
-- `/developer` — Load before making any code changes
-- `/deploy` — Load before deploying
-```
-
-**Why this structure works:**
-
-1. **Overview + Tech Stack** = Claude understands the project in ~100 tokens
-2. **Build & Test** = Claude can verify its own work
-3. **Directory Structure** = Claude navigates without scanning every folder
-4. **Conventions** = Claude matches your style, not generic patterns
-5. **Do NOT** = Prevents the most common AI mistakes
-6. **Skills** = Claude knows what's available without loading everything
-
----
-
-## Skills
-
-### Developer Skill
-
-**File:** `.claude/skills/developer/SKILL.md`
-
-This skill defines the workflow Claude follows when making code changes. It ensures Claude doesn't just edit files randomly — it follows a repeatable process.
-
-**What it enforces:**
-
-1. Read the relevant code before changing it
-2. Understand the existing patterns in the codebase
-3. Make changes that match project conventions
-4. Run the build to verify nothing broke
-5. Run tests if they exist
-6. Report what changed
-
-**Example usage in a conversation:**
-
-```
-You: Load the developer skill and refactor the auth middleware to use async/await
-
-Claude: [Loads /developer skill]
-        [Reads current auth middleware]
-        [Reads related files for patterns]
-        [Makes changes]
-        [Runs build]
-        [Runs tests]
-        [Reports: "Changed 3 files, build passes, 12 tests pass"]
-```
-
-**Customization points:**
-
-- Build command (line 15)
-- Test command (line 18)
-- Lint command (line 21)
-- Code style rules (section 3)
-- Pre-change checklist (section 2)
-
-### Deploy Skill
-
-**File:** `.claude/skills/deploy/SKILL.md`
-
-This skill defines your deployment process so Claude can execute it safely and consistently.
-
-**What it enforces:**
-
-1. Check current git status (clean working tree)
-2. Verify the build passes
-3. Run the deploy command
-4. Verify the deployment succeeded
-5. Report the result
-
-**Customization points:**
-
-- Deploy target(s) and commands
-- Pre-deploy checks
-- Post-deploy verification
-- Rollback procedure
-
-### Creating Your Own Skills
-
-Skills are just markdown files. Create a new one:
-
-```bash
-mkdir -p .claude/skills/my-skill
-```
-
-Then create `.claude/skills/my-skill/SKILL.md`:
-
-```markdown
-# My Skill Name
-
-## When to Use
-Describe when Claude should load this skill.
-
-## Workflow
-Step-by-step process Claude should follow.
-
-### Step 1: Prepare
-What to check before starting.
-
-### Step 2: Execute
-The actual work to do.
-
-### Step 3: Verify
-How to confirm it worked.
-
-## Rules
-- Specific constraints for this workflow
-- Things to avoid
-- Required checks
-```
-
-**Good candidates for skills:**
+Skills are Claude Code's way of loading scoped expertise on demand. Each `.claude/skills/<name>/SKILL.md` defines a workflow you can invoke with `/<name>` or `Skill({ skill: "<name>" })`.
 
 | Skill | Purpose |
 |-------|---------|
-| `database` | Migration workflow, query patterns, schema conventions |
-| `testing` | Test writing standards, coverage requirements, test data setup |
-| `api` | Endpoint conventions, request/response patterns, error handling |
-| `review` | Code review checklist, what to look for, how to report findings |
-| `docs` | Documentation standards, where docs live, update process |
-| `debug` | Debugging workflow, log analysis, common failure modes |
+| `developer` | Foundation skill loaded before any code change |
+| `deploy` | Deployment workflows |
+| `code-checkin` | Structured commit workflow with pre-push verification |
+| `code-audit` | Find tech debt and refactor opportunities |
+| `db-manager` | Database health, slow queries, schema audits |
+| `webmaster` | SEO and site management |
+| `agent-child` | Foundational skill for spawned agents |
+| `agent-queue` | Orchestrate parallel agents from a queue |
+| `agent-hygiene` | Clean up stale agents and queue tasks |
+| `context-hygiene` | Audit knowledge entries for staleness |
+| `doc-hygiene` | Audit documentation for drift and duplicates |
+| `issue-hygiene` | Verify GitHub issue alignment with work |
+| `merge-prs` | Safe PR review and merge workflow |
+| `research` | Deep web research |
+| `style-guide` | Writing style standards |
+| `ideas` | Capture and triage ideas |
+| `end-session` | Persist insights and clean up |
+
+### Hooks (7)
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `session-inject.mjs` | `UserPromptSubmit` | Injects `[SESSION]` short_id + session_id at conversation start |
+| `log-unified.mjs` | `PostToolUse` | Unified tool-call logging for debugging and cost auditing |
+| `skill-activated.mjs` | After Skill tool | Tracks which skills have been activated |
+| `pre-compact.mjs` | Before context compaction | Persist state before context loss |
+| `session-end.mjs` | Session shutdown | Cleanup and audit logging |
+| `subagent-lifecycle.mjs` | Subagent events | Coordinate spawned agents |
+| `lib/helpers.mjs` | (shared) | Common utilities for all hooks |
+
+### Internal Agents (4)
+
+Lightweight read-only agents you spawn via `Task({ subagent_type: "<name>" })`:
+
+- `code-finder` — Java/Kotlin/TS class/method search
+- `doc-finder` — Find skill docs, context topics, subsystem docs
+- `git-search` — Commit history, blame, branch changes
+- `schema-search` — Table structures, columns, SQL queries
+
+### MCP Server Reference (Optional)
+
+A minimal MCP server implementation under `mcp-server/` with:
+- Generic tools: `health`, `knowledge`, `query`, `session`, `terminal`
+- Generic services: circuit breaker, database (Knex — MySQL/PostgreSQL/SQLite), logger (Pino), Redis, health aggregation
+- TypeScript with strict mode, Zod schemas for tool parameters
+
+Defaults to SQLite — zero-config to run.
+
+### Monitoring Dashboard (Optional)
+
+A minimal session/agent/queue dashboard under `dashboard/`:
+- **Backend**: Node + Express + TypeScript + Knex (SQLite by default)
+- **Frontend**: React 19 + Vite + Tailwind 4
+
+### Examples
+
+Working examples under `examples/`:
+- `custom-hook/` — Build a session-tracking hook
+- `custom-mcp-tool/` — Build a search-codebase MCP tool
+- `custom-orchestrator/` — Build a multi-step skill that coordinates other skills
+- `custom-skill/` — Build a single-purpose skill
+
+### Agent Orchestration
+
+`spawn-agent.sh` launches Claude in interactive mode with `agent-context.md` injected, so the spawned session knows it is an agent. For multi-agent terminal coordination across IDE sessions, see [Want More?](#want-more).
 
 ---
 
-## Hooks
-
-### Session Tracking Hook
-
-**File:** `.claude/hooks/session-tracking.mjs`
-
-This hook runs at the start and end of every Claude Code conversation. It logs:
-
-- Session start timestamp
-- Session end timestamp
-- Conversation duration
-- Working directory
-
-Logs are written to `.claude/sessions/session-log.jsonl` (gitignored).
-
-**Why this matters:** When you're running multiple Claude sessions, or when you come back after a break, you can see exactly what happened and when. It's the minimum viable observability for AI-assisted development.
-
-**Log format:**
-
-```json
-{
-  "event": "session_start",
-  "timestamp": "2026-03-27T14:30:00.000Z",
-  "cwd": "/home/user/my-project",
-  "session_id": "abc123"
-}
-```
-
-### Creating Your Own Hooks
-
-Hooks are scripts registered in `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "command": "node .claude/hooks/my-hook.mjs",
-        "timeout": 5000
-      }
-    ]
-  }
-}
-```
-
-**Available hook events:**
-
-| Event | When it Fires |
-|-------|---------------|
-| `PreToolUse` | Before Claude runs a tool (Bash, Read, Write, etc.) |
-| `PostToolUse` | After a tool completes |
-| `UserPromptSubmit` | When you send a message |
-| `TaskCompleted` | When a subagent finishes |
-| `Stop` | When Claude finishes responding |
-
-**Example: Block destructive git commands**
-
-```javascript
-// .claude/hooks/git-guard.mjs
-import { readFileSync } from 'fs';
-
-const input = JSON.parse(readFileSync('/dev/stdin', 'utf8'));
-
-if (input.tool_name === 'Bash') {
-  const cmd = input.tool_input?.command || '';
-  const blocked = ['git push --force', 'git reset --hard', 'git clean -fd'];
-
-  for (const pattern of blocked) {
-    if (cmd.includes(pattern)) {
-      console.log(JSON.stringify({
-        decision: "block",
-        reason: `Blocked destructive command: ${pattern}`
-      }));
-      process.exit(0);
-    }
-  }
-}
-
-// Allow everything else
-console.log(JSON.stringify({ decision: "allow" }));
-```
-
----
-
-## Configuration
-
-### `.claude/settings.json`
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm run build)",
-      "Bash(npm test)",
-      "Bash(npm run lint)",
-      "Bash(git status)",
-      "Bash(git diff)",
-      "Bash(git log)"
-    ],
-    "deny": [
-      "Bash(git push --force)",
-      "Bash(rm -rf)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "command": "node .claude/hooks/session-tracking.mjs",
-        "timeout": 5000
-      }
-    ]
-  }
-}
-```
-
-**Permission patterns:**
-
-- `"Bash(npm run build)"` — Allow this exact command
-- `"Bash(npm *)"` — Allow any npm command
-- `"Write"` — Allow all file writes without confirmation
-- `"Edit"` — Allow all file edits without confirmation
-
-Start restrictive. Add permissions as you discover what your workflow needs. Every permission prompt from Claude is a signal that you should either allow it permanently or understand why it's asking.
-
----
-
-## Usage Patterns
-
-### Starting a Session
+## Quick Start
 
 ```bash
-claude
+# 1. Clone into your project
+git clone https://github.com/alarinel/claude-code-starter.git
+# Or copy specific files into an existing project
+
+# 2. Install hook dependencies (optional, only if using hooks)
+cd .claude/hooks && npm install && cd ../..
+
+# 3. Customize CLAUDE.md — replace the placeholders:
+#    [YOUR-PROJECT], [your-mcp-server], [your-topic], [your-schema], [working-branch]
+
+# 4. Optional: install the MCP server
+cd mcp-server && cp .env.example .env && npm install && npm run build && cd ..
+
+# 5. Optional: install the dashboard (run backend + frontend in two terminals)
+# Terminal 1:
+cd dashboard/backend && cp .env.example .env && npm install && npm run dev
+# Terminal 2:
+cd dashboard/frontend && npm install && npm run dev
 ```
 
-Claude reads your CLAUDE.md automatically. Verify by asking:
-
-```
-What skills are available?
-```
-
-Claude should list the developer and deploy skills.
-
-### Making Code Changes
-
-```
-Load the developer skill and add input validation to the /api/users endpoint
-```
-
-Claude will:
-1. Load the developer skill
-2. Read the current endpoint code
-3. Read related validation patterns in your codebase
-4. Add validation following your conventions
-5. Build to verify
-6. Report changes
-
-### Deploying
-
-```
-Load the deploy skill and deploy to production
-```
-
-Claude will follow your deploy skill's workflow step by step.
-
-### Multi-File Refactors
-
-```
-Load the developer skill. Rename the UserService class to AccountService
-everywhere it appears — imports, references, tests, file names.
-```
-
-This is where structured Claude Code shines. The developer skill ensures Claude:
-- Finds all references before changing anything
-- Updates imports across the codebase
-- Renames test files and updates test descriptions
-- Verifies the build passes after all changes
+See `docs/quick-start.md` for the full walkthrough and `docs/prerequisites.md` for platform-specific install instructions.
 
 ---
 
-## Tips and Best Practices
+## Architecture
 
-### Keep CLAUDE.md Under 3,000 Tokens
+See `docs/architecture.md` for the full architecture document covering:
 
-Every token in CLAUDE.md is loaded every conversation. Move detailed instructions into skills. Your CLAUDE.md should be a routing table, not an encyclopedia.
+- Session identity and the session ID lifecycle
+- Hook system architecture (file-based vs Redis-backed)
+- Skill loading and routing
+- Multi-agent orchestration patterns
+- MCP server design (services, tools, circuit breakers)
+- Knowledge management with prioritized entries
 
-**Bad:**
-```markdown
-# CLAUDE.md
-[3 pages of deployment instructions]
-[2 pages of testing guidelines]
-[4 pages of API conventions]
-```
+Other docs:
+- `docs/mcp-server-guide.md` — Building custom MCP tools
+- `docs/stack-adaptation.md` — Adapt to MySQL/PostgreSQL/SQLite, different languages, different frameworks
+- `docs/prerequisites.md` — Platform-specific install instructions
 
-**Good:**
-```markdown
-# CLAUDE.md
-## Skills
-- `/developer` — Code change workflow (includes testing, conventions)
-- `/deploy` — Full deployment process
-- `/api` — API design patterns and endpoint conventions
-```
+---
 
-### Use "Do NOT" Lists
+## Customization
 
-Claude pays strong attention to negative instructions. If Claude keeps making the same mistake, add it to the "Do NOT" section:
+The kit uses placeholder strings throughout. Find and replace them with your project's values:
 
-```markdown
-## Do NOT
-- Do NOT use relative imports — always use path aliases (@/src/...)
-- Do NOT add console.log for debugging — use the logger service
-- Do NOT create new utility files — extend existing ones in src/utils/
-```
+| Placeholder | Replace With |
+|-------------|--------------|
+| `[YOUR-PROJECT]` | Your project name (used in terminal titles, logs) |
+| `[your-mcp-server]` | Your MCP server name as registered in Claude Code |
+| `[your-topic]` | Your context topic IDs |
+| `[your-schema]` | Your database schema names |
+| `[working-branch]` | Your default branch (e.g., `main`, `develop`) |
 
-### Verify Builds After Every Change
-
-Your developer skill should always end with a build verification step. This catches errors immediately instead of letting them accumulate across a conversation.
-
-### One Skill Per Workflow
-
-Don't create a mega-skill that handles everything. Each skill should own one workflow:
-
-| Approach | Result |
-|----------|--------|
-| One big skill | Claude loads 5,000 tokens of instructions for every task |
-| Focused skills | Claude loads 800 tokens for the specific workflow it needs |
-
-### Use Hooks for Guardrails, Not Logic
-
-Hooks should prevent mistakes and log activity. Don't use them to implement complex business logic — that belongs in your application code.
-
-**Good hook uses:**
-- Block dangerous commands
-- Log session activity
-- Inject context at session start
-- Notify on task completion
-
-**Bad hook uses:**
-- Run database migrations
-- Deploy code
-- Generate files
-
-### Iterate on Your CLAUDE.md
-
-Your CLAUDE.md is a living document. Every time Claude does something wrong:
-
-1. Figure out what instruction would have prevented it
-2. Add that instruction to CLAUDE.md or the relevant skill
-3. Test it in the next conversation
-
-Over time, your CLAUDE.md becomes a highly effective set of instructions tailored to your project.
+Search for `<!-- CUSTOMIZE:` comments in `CLAUDE.md` for guidance on each section.
 
 ---
 
 ## Want More?
 
-This starter kit covers the fundamentals — a solid CLAUDE.md, two essential skills, and basic session tracking. It's enough to meaningfully improve your Claude Code experience.
+This starter covers the foundation. For deeper AI-IDE integration in JetBrains IDEs (IntelliJ IDEA, WebStorm, PyCharm, Rider, GoLand, etc.), the **LLITD Bridge Suite** picks up where this kit leaves off:
 
-If you want the full production system, check out the **[Claude Code Pro Kit](https://llitd.com/claude-code-kit)**.
+| Plugin | What You Get |
+|--------|--------------|
+| **Terminal Bridge** | Agents read, write, and orchestrate multiple terminal sessions directly inside your IDE — coordinate parallel work, stream output, manage long-running processes without context-switching |
+| **Project Intelligence Bridge** | Agents get live project structure, symbol indexing, file watching, and codemap intelligence — semantic code understanding instead of grep |
+| **Run Configuration Bridge** | Agents trigger your existing run configs (builds, tests, deploys) end-to-end — works with whatever you've already set up |
+| **Notification Bridge** | Agents post structured notifications surfaced in your IDE — see what background work completed without checking terminals |
 
-It's what I use daily on a large production codebase (Java backend, React frontend, MCP server, infrastructure-as-code). Here's what the Pro Kit adds beyond this starter:
+All four are freemium. The open-source companion server is on [npm: `bridge-suite-mcp`](https://www.npmjs.com/package/bridge-suite-mcp) and [GitHub](https://github.com/alarinel/bridge-suite-mcp).
 
-| Capability | Starter (this repo) | Pro Kit |
-|-----------|---------------------|---------|
-| CLAUDE.md template | Basic | Topic-based loading (82% token savings) |
-| Skills | 2 (developer, deploy) | 20 (code audit, game testing, book pipeline, blog, etc.) |
-| Hooks | 1 (session tracking) | 6 (context injection, git guards, agent detection, etc.) |
-| Multi-agent | Not included | Full queue-based orchestration |
-| MCP server | Not included | Custom MCP server with 40+ tools |
-| Dashboard | Not included | Real-time session monitoring |
-| Agent spawning | Not included | Concurrent agent pool with task claiming |
-| Build verification | Manual | Automated via IntelliJ bridge |
-
-The Pro Kit is a one-time purchase ($29-$149 depending on tier). No subscriptions.
-
-**[Learn more at llitd.com/claude-code-kit →](https://llitd.com/claude-code-kit)**
-
----
-
-## FAQ
-
-**Q: Does this work with Claude Code Teams/Enterprise?**
-A: Yes. The `.claude/` directory structure is standard across all Claude Code tiers.
-
-**Q: Will this conflict with my existing `.claude/` configuration?**
-A: If you already have a `.claude/` directory, merge the files manually rather than overwriting. The settings.json hooks array is additive — you can combine entries.
-
-**Q: Do I need an MCP server for this to work?**
-A: No. This starter kit uses only built-in Claude Code features (CLAUDE.md, skills, hooks). No external dependencies.
-
-**Q: How do I update when you release new versions?**
-A: Check the [releases page](https://github.com/lincolncole/claude-code-starter/releases) for changelogs. Copy updated files manually — don't overwrite your customized CLAUDE.md.
-
-**Q: Can I use this with other AI coding tools?**
-A: The CLAUDE.md format is specific to Claude Code. However, the patterns (structured instructions, workflow skills, lifecycle hooks) apply to any AI coding assistant. You'd need to adapt the file format.
+Find the plugins on the [JetBrains Marketplace (LLITD vendor page)](https://plugins.jetbrains.com/vendor/llitd).
 
 ---
 
 ## Contributing
 
-Contributions are welcome. The goal is to keep this starter kit **minimal and universally useful**.
+Issues and PRs are welcome.
 
-**Good contributions:**
-- Improvements to the CLAUDE.md template
-- Bug fixes in the session tracking hook
-- Better documentation
-- New example skills that are broadly applicable (testing, database, API)
+When opening an issue:
+- Describe what you tried and what happened
+- Include your Claude Code version (`claude --version`)
+- Include your platform (OS, Node version)
 
-**Out of scope:**
-- Framework-specific configurations (React, Django, Rails, etc.)
-- Complex hook logic
-- Anything that adds dependencies
-
-### How to Contribute
-
-1. Fork the repo
-2. Create a branch (`git checkout -b improve-developer-skill`)
-3. Make your changes
-4. Test with Claude Code on a real project
-5. Submit a PR with a description of what you changed and why
+When opening a PR:
+- Match the existing code style
+- Add a brief explanation in the description
+- Keep changes focused — small PRs land faster than big ones
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
-Use it however you want. Attribution appreciated but not required.
-
----
-
-Built by [Lincoln Cole](https://llitd.com) — author, developer, and full-time Claude Code user.
+Copyright © 2026 LLITD LLC.

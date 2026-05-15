@@ -1,24 +1,70 @@
 {
+  "__comment_overview": "claude-code-starter -- settings.json. Defines hooks, permissions, and environment for Claude Code CLI.",
+
+  "hooks": {
+    "__comment_hooks": "Three lite hooks handle session lifecycle. Place hook scripts in .claude/hooks/",
+
+    "UserPromptSubmit": [
+      {
+        "command": "node .claude/hooks/session-inject.mjs",
+        "__comment": "Injects [SESSION] short_id and session_id at conversation start. Outputs session identifiers that CLAUDE.md references for MCP tool calls and temp folder paths."
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "command": "node .claude/hooks/log-unified.mjs",
+        "__comment": "Unified logging for all tool invocations. Logs tool name, parameters, duration, and result status. Useful for debugging agent behavior and auditing cost."
+      },
+      {
+        "command": "node .claude/hooks/skill-activated.mjs",
+        "__comment": "Fires after any tool use, including the Skill tool. Use this to update dashboards, release queue items, or trigger follow-up workflows."
+      }
+    ]
+  },
+
   "permissions": {
+    "__comment_permissions": "Allowlists control which tools Claude can use without prompting. Add tool names exactly as they appear in the tool list. Wildcards are not supported.",
+
     "allow": [
       "Read",
       "Glob",
       "Grep",
+      "Write",
+      "Edit",
+      "Bash(npm run build*)",
+      "Bash(npm run test*)",
       "Bash(git status)",
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git show*)",
-      "Bash(git branch*)",
-      "Bash(npm run build*)",
-      "Bash(npm test*)"
-    ]
+      "Bash(git branch)",
+      "Bash(git pull origin*)",
+      "Bash(ls*)",
+      "Bash(mkdir*)",
+      "Bash(node*)",
+      "Bash(cat*)",
+      "Bash(pwd)"
+    ],
+
+    "__comment_deny": "Add patterns here to block specific tools or commands. Example: Bash(rm -rf*) to prevent recursive deletes.",
+    "deny": []
   },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "type": "command",
-        "command": "node .claude/hooks/session-tracking.mjs"
-      }
-    ]
-  }
+
+  "env": {
+    "__comment_env": "Environment variables available to hooks and scripts. Override via .env file or shell environment.",
+
+    "MCP_SERVER_URL": "http://localhost:3100",
+    "MCP_SERVER_NAME": "[your-mcp-server]",
+    "PROJECT_NAME": "[YOUR-PROJECT]",
+    "DEFAULT_BRANCH": "main",
+    "DB_HOST": "localhost",
+    "DB_PORT": "3306",
+    "REDIS_HOST": "localhost",
+    "REDIS_PORT": "6379"
+  },
+
+  "includeGitInstructions": false,
+
+  "__comment_git": "Disabling built-in git instructions prevents Claude from generating its own commit/PR patterns. All git writes go through the /code-checkin skill defined in CLAUDE.md."
 }

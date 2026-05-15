@@ -77,3 +77,7 @@ This is the gatekeeper skill for every code change in the project. Load it befor
 - **Import ordering matters.** Some linters enforce import order. Add new imports in the correct group (stdlib, third-party, local) to avoid lint failures.
 - **Don't trust "it compiled" as sufficient.** Compilation catches syntax errors, not logic errors. Run tests.
 - **Large refactors need a plan.** If you're changing an interface used by 20+ files, list all files first, then change them systematically. Don't start editing and hope you find them all.
+
+## Reference Docs
+
+- [`literal-prompting.md`](literal-prompting.md) — Opus 4.7 prompting pattern (9 rules for writing prompts, skill docs, and CLAUDE.md rules that hold up under literal instruction following). Load when rewriting any doc that a model is expected to follow as instructions.

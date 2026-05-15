@@ -39,6 +39,8 @@ This is not a wrapper or framework — it's a complete set of configuration file
 | `.env.example` | All configurable environment variables with defaults |
 | `check-prerequisites.sh` | Environment validation script (Linux/macOS, Git Bash, WSL) |
 | `check-prerequisites.ps1` | Environment validation script (Windows PowerShell) |
+| `spawn-agent.sh` | Interactive Claude launcher with `agent-context.md` injected |
+| `.claude/prompts/agent-context.md` | System prompt template for spawned agents |
 
 ### Skills
 
